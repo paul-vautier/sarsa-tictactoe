@@ -1,9 +1,10 @@
 import numpy as np
+import gymnasium
 from tqdm import tqdm
 from tictactoe import TicTacToeEnv
 from utils import rendering, plot_stats
 import json
-
+from gymnasium.utils.env_checker import check_env
 env = TicTacToeEnv()
 
 env.reset()
@@ -11,18 +12,19 @@ frame = env.render()
 
 _action_values = {}
 
-def action_values(state: str) -> int:
-    if state not in _action_values:
-        _action_values[state] = np.zeros((9,))
-    return  _action_values[state]
+def action_values(state) -> int:
+    hash = state.data.tobytes()
+    if hash not in _action_values:
+        _action_values[hash] = np.zeros((9,))
+    return  _action_values[hash]
 
 
 def policy(state, epsilon=1/4):
     av = action_values(state)
     if np.random.random() < epsilon:
-        legals = np.array([-100. if state[square[0]] != "0" else 1 for square, _ in np.ndenumerate(av)])
+        legals = np.array([-100. if state[square[0]] != 0 else 1 for square, _ in np.ndenumerate(av)])
     else:
-        legals = np.array([-100. if state[square[0]] != "0" else value for square, value in np.ndenumerate(av)])
+        legals = np.array([-100. if state[square[0]] != 0 else value for square, value in np.ndenumerate(av)])
 
     choice = np.random.choice(np.flatnonzero(legals==legals.max()))
     
@@ -63,7 +65,7 @@ def n_step_sarsa(policy, action_values, episodes, alpha = 0.1, gamma=0.99, epsil
                 action_values(state_t)[action_t] = qsa + alpha * (G - qsa)
             
             t += 1
-            #state = next_state
+            state = next_state
             action = next_action
 
         stats['Returns'].append(ep_return)
@@ -91,10 +93,10 @@ def load():
         _action_values = {k: np.array(v) for k, v in json.load(r,cls=NumpyDecoder).items()}
         print(len(_action_values))
 
+#check_env(env)
 
-plot_stats(n_step_sarsa(policy, action_values, episodes=50000, epsilon=.1))
+plot_stats(n_step_sarsa(policy, action_values, episodes=200000, epsilon=.3))
 rendering(env, policy, episodes=1)
  
-
 
 

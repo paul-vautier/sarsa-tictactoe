@@ -14,18 +14,37 @@ class TicTacToeEnv(gym.Env):
     SIZE = 3
     SQUARES = SIZE * SIZE
     
-    def __init__(self, board = None):
-        self.reset(board)
+    def __init__(self, seed = None):
+        self.reset(seed)
         self.observation_space = spaces.Box(low=0, high=2, shape=(self.SQUARES,), dtype=np.int64)
         self.action_space = spaces.Discrete(self.SQUARES)
         self.reward_range = (0, 1)
 
-    def reset(self, board = None):
-        if (board is None):
-            board = [0] * 9
-        self.board : list[int] = board
+    def __create_random_board__(self, seed):
+        random.seed(seed)
+        super().reset(seed=seed)
+        # Randomly shuffle the positions for X and O
+        positions = list(range(random.randint(0, 9)))
+        random.shuffle(positions)
+        
+        for i, pos in enumerate(positions):
+            player = i % 2 + 1  # Alternate between player 1 (X) and player 2 (O)
+            if self.board[pos] == 0:
+                self.board[pos] = player
+            else:
+                # If the position is already occupied, find the next empty position
+                for j in range(pos, 9):
+                    if self.board[j] == 0:
+                        self.board[j] = player
+                        break
+
+    def reset(self, seed = None, options = {}, **kwargs):
+        if (seed):
+            self.__create_random_board__(seed)
+        else:
+            self.board = [0] * 9
         self.turn : int = 0
-        return (self.board_str(), {})
+        return (np.array(self.board, dtype=np.int64), {})
 
     def step(self, value: int) :
         state = self.play_move(value)
@@ -47,7 +66,7 @@ class TicTacToeEnv(gym.Env):
                 reward = -3
 
         # Not returning truncated, since we assume that the agent will use legal_moves()
-        return self.board_str(), reward, done, False, {}
+        return np.array(self.board, dtype=np.int64), reward, done, False, {}
     
     def render(self):
         print('-----'.join(

@@ -1,8 +1,10 @@
-from typing import Callable
 import time
+from typing import Callable
+
 import matplotlib.pyplot as plt
 import numpy as np
 from IPython import display
+
 
 def show_render(img, render,sleep=0.1):
     img.set_data(render) 
@@ -117,21 +119,3 @@ def plot_stats(stats,smooth=10):
     plt.tight_layout()
     plt.show()         
         
-        
-import gymnasium
-from gymnasium.envs.toy_text import frozen_lake
-from gymnasium.envs.toy_text.utils import categorical_sample
-
-class SimFrozenLake(frozen_lake.FrozenLakeEnv):
-    
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        
-    def simulate_step(self, s, a ):
-        transitions = self.P[s][a]
-        i = categorical_sample([t[0] for t in transitions], self.np_random)
-        p, s, r, t = transitions[i]
-        
-        if self.render_mode == "human":
-            self.render()
-        return (int(s), r, t, False, {"prob": p})
